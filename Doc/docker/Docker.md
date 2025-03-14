@@ -362,16 +362,24 @@ chmod +x delete_docker_images.sh
 ./delete_docker_images.sh image_ids.txt
 ```
 
-##### 获取镜像具体创建时间
+##### 获取镜像详细信息
+
+获取镜像具体创建时间
 
 ```
 docker inspect --format='{{.Created}}' <image_name_or_id>
 ```
 
-##### 获取镜像entrypoint
+获取镜像entrypoint
 
 ```
-docker inspect -f {{.Config.Entrypoint}} <image_name_or_id>
+docker inspect -f "{{.Config.Entrypoint}}" <image_name_or_id>
+```
+
+##### 获取镜像的构建历史
+
+```
+docker history <image_name_or_id>
 ```
 
 #### 容器相关命令
@@ -440,10 +448,26 @@ docker cp 5571842d72e8:/usr/share/jitsi-meet ./libs
 docker commit 5571842d72e8 jitsi/web:2.0.7577
 ```
 
+##### 日志位置
+
+```
+/var/lib/docker/containers/{containers_id}
+```
+
 ##### 查看日志
 
 ```
-docker logs -f 5571842d72e8 --tail=200
+# 跟踪日志
+docker logs -t -f 5571842d72e8 --tail=200
+
+# 查看某段时间的日志
+docker logs -t --since="2021-08-18T11:46:37" --until "2021-08-18T11:47:37" CONTAINER_ID
+```
+
+##### 写入日志到本地
+
+```
+docker logs -t CONTAINER_ID | grep 'error' >> logs_error.txt
 ```
 
 ## Dockerfile构建镜像
@@ -601,6 +625,10 @@ services:
 
 ### 环境变量
 
+**注意：环境变量不支持 `-` 请用 `_` 代替**
+
+例如：NACOS-HOST是无效的，NACOS_HOST是正确的
+
 #### 容器引用变量的优先级
 
 ```
@@ -673,6 +701,12 @@ services:
 .env文件
 
 在docker-compose.yml同级目录中加入`.env`文件，则可以设置docker-compose环境变量的默认值，可以在docker-compose中引用到的。
+
+docker-compose命令指定
+
+```
+docker-compose --env-file ../../flyshare.env config
+```
 
 ### 查看当前配置
 
@@ -765,8 +799,45 @@ permission denied while trying to connect to the Docker daemon socket at unix://
 $需要写成$$来转义
 ```
 
-### 容器日志
+### runtime/cgo: pthread_create failed: Resource temporarily unavailable
+
+#### 1. 检查系统资源
+
+运行以下命令系统使用情况：
 
 ```
-/var/lib/docker/containers/{containers_id}
+ps -eLf | wc -l                     # 统计当前系统线程数
+ulimit -a                           # 查看线程和内存限制
+cat /proc/sys/kernel/threads-max    # 查看Linux内核对系统的最大线程数限制
+cat /proc/sys/kernel/pid_max        # 检查每个用户的线程数
+dmesg | grep -i oom                 # 查看是否有 OOM 相关的日志
+top -o %MEM                         # 查看哪个进程占用最多内存
 ```
+
+#### 2. 修复问题
+
+操作系统线程和内存限制
+
+```
+ulimit -a    # 查看线程和内存限制，如果过小，需要进行调整
+
+修改文件
+vim /etc/security/limits.conf
+
+写入如下参数
+*    soft    nproc   12047
+*    hard    nproc   26384
+*    soft    nofile  819200
+*    hard    nofile  819200
+*    soft    stack   8192000
+*    hard    stack   8192000
+*    soft    memlock unlimited
+*    hard    memlock unlimited
+
+重新登录用户使生效
+su - root
+```
+
+OOM问题
+
+找到占用最多内存的进程杀掉

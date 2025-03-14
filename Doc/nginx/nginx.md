@@ -2,34 +2,50 @@
 
 ## 常用命令
 
-```
-查看已开放端口
+### 防火墙
+
+```sh
+# 查看已开放端口
 firewall-cmd --list-ports
+
+# 重载配置
 firewall-cmd --reload
 
-开放端口
+# 开放端口
 firewall-cmd --zone=public --permanent --add-port=8080/tcp --add-port=23333/udp
 
-重启防火墙
+# 重启
 systemctl reload firewalld
 
+# 停用
 systemctl stop firewalld
 
+# 启用
 systemctl start firewalld
 
+# 查看状态
 systemctl status firewalld
+```
 
+### nginx
+
+```sh
+# 查看nginx进程
 ps -ef | grep nginx
 
+# 查看端口使用
 netstat -tunlp|grep 80
 
+# 启动
+./nginx
 
+# 停用
+./nginx -s stop
 
-./nginx 启动
-
-./nginx -s stop 关闭
-
+# 重启
 ./nginx -s reload 重启
+
+# 测试配置
 ./nginx -t
 ```
 
@@ -57,7 +73,7 @@ netstat -tunlp|grep 80
 
 #### 配置
 
-```
+```nginx
 最外层->http下
 server {
 	listen 19002 ssl;
@@ -93,7 +109,7 @@ server {
 
 #### stream配置ssl
 
-```
+```nginx
 最外层->
 stream {
 	server {
@@ -113,7 +129,7 @@ stream {
 
 ### TCP代理配置
 
-```
+```nginx
 最外层
 stream {
     upstream fs-minio {
@@ -138,18 +154,78 @@ stream {
 
 ### 静态目录代理
 
-```
+```nginx
 最外层->http->server下
 location /static/ {
     alias /data/flyshare/public/;
-    autoindex on;
+    autoindex on;   # 可以关闭目录访问
 }
 ```
 
 ### 负载配置
 
+```nginx
+
 ```
 
+## 日志处理
+
+### 关闭日志
+
+不建议关闭nginx所有日志
+
+#### 关闭静态文件日志
+
+```nginx
+location ~ \.(css|js|jpg|png|gif|swf)$ {
+     access_log off;
+     log_not_found off;
+}
+```
+
+#### 关闭URL日志
+
+```nginx
+location = /xx-api {
+     access_log off;
+     log_not_found off;
+}
+```
+
+### 清空日志
+
+```sh
+echo "" > /usr/local/nginx/logs/access.log
+
+cat /dev/null > /usr/local/nginx/logs/access.log
+```
+
+### 切割日志
+
+cut_logs.sh
+
+```sh
+#!/bin/bash
+# 先复制原来的错误日志文件，请根据自己实际的日志路径填写
+cp /usr/local/nginx/logs/error.log /usr/local/nginx/logs/error-$(date -d "yesterday" +"%Y%m%d").log
+# 清空错误日志文件
+cat /dev/null > /usr/local/nginx/logs/error.log
+# 先复制原来的访问日志
+cp /usr/local/nginx/logs/access.log /usr/local/nginx/logs/access-$(date -d "yesterday" +"%Y%m%d").log
+# 清空原来的正常访问日志
+cat /dev/null > /usr/local/nginx/logs/access.log
+# 定期删除七天前的日志文件
+find /usr/local/nginx/logs -mtime 7 -type f -name \*.log | xargs rm -rf
+```
+
+设置定时任务
+
+```
+$ crontab -e
+# 输入
+0 0  * * * /usr/bin/sh cut_logs.sh #每天的00:00执行日志切分
+
+$ crontab -l #查看定时任务是否添加成功
 ```
 
 ## 常用参数

@@ -691,6 +691,12 @@ md5sum md5
 :set-number
 ```
 
+## Nvidia
+
+```
+watch -n 1 nvidia-smi
+```
+
 ## 常用命令
 
 删除系统中60天之前的所有exe文件

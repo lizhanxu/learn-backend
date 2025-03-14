@@ -33,4 +33,4 @@ set type=cname
 
 ## 查看文件MD5、SHA值
 
-`certutil -hashfile D:\xxx.txt`
+`certutil -hashfile D:\xxx.txt md5`

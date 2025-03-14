@@ -37,6 +37,7 @@ session  为cp命令管理保存的会话。
 config   管理mc配置文件。
 update   检查软件更新。
 version  输出版本信息。
+du       统计大小
 ```
 
 https://blog.csdn.net/qq_37284798/article/details/132900357

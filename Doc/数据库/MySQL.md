@@ -24,6 +24,9 @@ SELECT User, Host FROM mysql.user;
 SELECT TABLE_NAME
 FROM INFORMATION_SCHEMA.VIEWS
 WHERE TABLE_SCHEMA = 'your_database_name';
+
+执行某个sql文件
+mysql -h 127.0.0.1 -u root -p ai_chat < /udpate_sql/a.sql
 ```
 
 ### 用户和授权
@@ -270,5 +273,48 @@ WHERE table_schema = 'fschat'  -- 替换为你的数据库名称
       AND table_type = 'BASE TABLE'
       AND table_rows = 0
   );
+```
+
+
+
+```
+SELECT CONCAT('TRUNCATE TABLE `', table_name, '`;') 
+FROM information_schema.tables 
+WHERE table_schema = 'ai_chat';
+```
+
+
+
+```
+TRUNCATE TABLE `ai_app_base`;
+TRUNCATE TABLE `ai_app_config`;
+TRUNCATE TABLE `ai_base_files_url`;
+TRUNCATE TABLE `ai_file_storage`;
+TRUNCATE TABLE `ai_governance_record`;
+TRUNCATE TABLE `ai_icon`;
+TRUNCATE TABLE `ai_knowledge_app`;
+TRUNCATE TABLE `ai_knowledge_base`;
+TRUNCATE TABLE `ai_knowledge_base_files`;
+TRUNCATE TABLE `ai_qa_app`;
+TRUNCATE TABLE `ai_qa_base`;
+TRUNCATE TABLE `ai_qa_pairs`;
+TRUNCATE TABLE `ai_qa_pairs_temp`;
+TRUNCATE TABLE `ai_session`;
+TRUNCATE TABLE `ai_session_log`;
+TRUNCATE TABLE `ai_session_qa_source`;
+TRUNCATE TABLE `ai_synonyms_word`;
+TRUNCATE TABLE `ai_ur_app`;
+TRUNCATE TABLE `ai_user_operation_log`;
+TRUNCATE TABLE `ai_user_role`;
+TRUNCATE TABLE `ai_words`;
+TRUNCATE TABLE `ai_words_sync_log`;
+TRUNCATE TABLE `ai_writing_draft`;
+TRUNCATE TABLE `ai_writing_draft_files`;
+TRUNCATE TABLE `conversation`;
+TRUNCATE TABLE `file_doc`;
+TRUNCATE TABLE `knowledge_base`;
+TRUNCATE TABLE `knowledge_file`;
+TRUNCATE TABLE `message`;
+TRUNCATE TABLE `summary_chunk`;
 ```
 
