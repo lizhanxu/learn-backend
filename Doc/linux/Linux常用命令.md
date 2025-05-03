@@ -217,11 +217,46 @@ mount /dev/sdb /data
 解除挂载
 umount /dev/sdb
 设置开机启动命令
-vi /etc/rc.d/rc.local
+vi /etc/rc.d/rc.local（不适用ubuntu）
 chmod 755 /etc/rc.d/rc.local
-
-/etc/fstab
 ```
+
+### /etc/fstab
+
+```
+vim /etc/fstab
+/dev/sdb  /mnt/data  ext4  defaults  0  2
+```
+
+参数说明
+
+```
+/dev/sdb —— 设备路径（可以改成 UUID）
+
+/mnt/data —— 挂载点
+
+ext4 —— 文件系统类型（如果是 XFS 就写 xfs）
+
+defaults —— 挂载选项（默认 rw、auto、exec 等）
+
+0 —— 是否需要 dump 备份（一般为 0）
+
+2 —— 文件系统检查顺序（根目录 / 应该是 1，其他分区 2）
+```
+
+文件系统检查顺序
+
+| 值   | 作用                                        |
+| ---- | ------------------------------------------- |
+| `0`  | 不执行 `fsck`（适用于临时存储、网络磁盘等） |
+| `1`  | 启动时 **优先** 检查（仅用于 `/` 根分区）   |
+| `2`  | 启动时 **稍后** 检查（适用于数据分区）      |
+
+**最佳实践：**
+
+- **系统盘：** `/` 设为 `1`，其他盘设为 `2`
+- **数据盘（重要）：** 设为 `2`
+- **临时磁盘（如 `/mnt`）：** 设为 `0`
 
 ## 查看cpu信息-lscpu
 
@@ -273,6 +308,12 @@ top
 useradd -m <username> -s /bin/bash
 -s指定shell工具，默认是/bin/sh，不支持tab补全等
 如果是已建用户修改到/bin/bash，可以编辑/etc/passwd修改
+```
+
+### 删除用户账号
+
+```
+userdel -r <username>
 ```
 
 ### 修改用户账号
@@ -345,6 +386,8 @@ alpine
 
 ```shell
 apk -I list 列出已安装
+apk update
+apk add nodejs npm yarn
 ```
 
 ### yum
@@ -412,6 +455,8 @@ ln -s /usr/bin/python2.7 /usr/bin/python
 
 ## 防火墙
 
+### firewalld
+
 查看防火墙状态
 
 ```shell
@@ -437,13 +482,13 @@ systemctl restart firewalld
 systemctl stop firewalld
 ```
 
-开机禁用
+禁用开机自启
 
 ```shell
 systemctl disable firewalld
 ```
 
-开机启动
+开启开机启动
 
 ```shell
 systemctl enable firewalld
@@ -514,9 +559,51 @@ firewall-cmd --zone=public --permanent --remove-port=9080/tcp
 </zone>
 ```
 
+### ufw
+
+```
+查看防火墙状态
+ufw status
+ufw status numbered
+systemctl status ufw
+
+启用防火墙
+ufw enable
+
+关闭防火墙
+ufw disable
+
+重载防火墙规则
+ufw reload
+
+关闭所有外部对本机的访问，但本机访问外部正常
+ufw default deny
+
+添加端口访问
+tcp/udp均可
+ufw allow 22
+
+仅tcp
+ufw allow 22/tcp
+
+仅udp
+ufw allow 22/udp
+
+禁用端口访问
+ufw delete allow 22
+
+按行号删除规则（ufw status numbered）
+ufw delete 4
+```
+
+
+
 ## iptables
 
 ```shell
+查看iptables规则
+iptables -L
+
 查看指定chain
 iptables -L INPUT
 注意顺序由上往下，优先级从高到低
@@ -530,18 +617,15 @@ INPUT是chain名称，表示插入或追加到哪个chain
 -p指定protocol，指定通信协议，tcp、udp等
 --dport指定端口
 ACCEPT表示接收数据包，DROP表示丢弃数据包
+
+删除指定chain的某行规则
+iptables -D INPUT 4
 ```
 
 ## 查看软件路径
 
 ```shell
 which python
-```
-
-## 查看显卡占用
-
-```shell
-nvidia-smi
 ```
 
 ## ssh免密登录
@@ -691,10 +775,117 @@ md5sum md5
 :set-number
 ```
 
+### 替换
+
+```
+全局替换
+:%s/old_str/new_str/g
+:%s/10.0.210.123/192.168.2.2/g
+
+:%s/old_str/new_str/gc
+末尾的c参数代表询问替换，也就是说会在替换每个字符串时询问是否要进行替换操作
+```
+
 ## Nvidia
 
 ```
+nvidia-smi
 watch -n 1 nvidia-smi
+```
+
+## history
+
+* `history|grep `命令，查找历史命令
+
+* `!(history 显示的记录行号)`回车执行，执行对应行号的历史命令
+* Ctrl+R：输入若干字符（关键词），会搜索包含所输入关键词的历史命令。继续按Ctrl+R则会继续向前搜索包含关键词的历史命令。找到目标命令后，可以直接按enter键执行找到的命令。如果还想修改参数则可以按右箭头。
+  Ctrl+G:从Ctrl+R的搜索模式中跳出
+
+## nslookup
+
+### 安装
+
+```
+ubuntu/debian
+apt-get install dnsutils
+
+centos/fedora
+yum install bind-utils
+```
+
+
+
+### 域名解析
+
+```
+nslookup www.baidu.com 114.114.114.114
+```
+
+## shell
+
+### $0 $1 $# $@等含义
+
+假设执行 `./test.sh a b c` 这样一个命令，则可以使用下面的参数来获取一些值：
+
+- `$0`
+  对应 *./test.sh* 这个值。如果执行的是 `./work/test.sh`， 则对应 *./work/test.sh* 这个值，而不是只返回文件名本身的部分。
+
+- `$1`
+  会获取到 a，即 `$1` 对应传给脚本的第一个参数。
+
+- `$2`
+  会获取到 b，即 `$2` 对应传给脚本的第二个参数。
+
+- `$3`
+  会获取到 c，即 `$3` 对应传给脚本的第三个参数。`$4`、`$5` 等参数的含义依此类推。
+
+- `$#`
+  会获取到 3，对应传入脚本的参数个数，统计的参数不包括 `$0`。
+
+- `$@`
+  会获取到 "a" "b" "c"，也就是所有参数的列表，不包括 `$0`。
+
+- `$*`
+  也会获取到 "a" "b" "c"， 其值和 `$@` 相同。但 `"$*"` 和 `"$@"` 有所不同。
+  `"$*"` 把所有参数合并成一个字符串，而 `"$@"` 会得到一个字符串参数数组。
+
+- `$?`
+  可以获取到执行 `./test.sh a b c` 命令后的返回值。
+  在执行一个前台命令后，可以立即用 `$?` 获取到该命令的返回值。
+  该命令可以是系统自身的命令，可以是 shell 脚本，也可以是自定义的 bash 函数。
+
+  当执行 shell 脚本时，`$?` 对应该脚本调用 `exit` 命令返回的值。如果没有主动调用 `exit` 命令，默认返回为 0。
+  当执行自定义的 bash 函数时，`$?` 对应该函数调用 `return` 命令返回的值。如果没有主动调用 `return` 命令，默认返回为 0。
+
+### 追加文件内容
+
+```
+追加单行
+echo "追加的内容" >> file.txt
+
+追加内容到文件的末尾行
+>> 符号表示 追加（不会覆盖原内容）
+
+追加多行
+echo -e "第一行\n第二行\n第三行" >> file.txt
+-e 使 \n 换行符生效
+等同 printf "第一行\n第二行\n" >> file.txt  printf 默认支持换行
+```
+
+### `set -e -u`
+
+等同`set -eu`
+
+`-e`：如果任何命令 **执行失败**（返回非 0 状态），脚本会立即退出。
+
+`-u`：如果脚本 **使用了未定义的变量**，会报错并退出。
+
+### 变量使用设置默认值
+
+使用 `${VAR:-default}` 设置默认值
+
+```
+echo "Hello, ${username:-Guest}"
 ```
 
 ## 常用命令

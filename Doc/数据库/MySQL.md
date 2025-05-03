@@ -27,6 +27,9 @@ WHERE TABLE_SCHEMA = 'your_database_name';
 
 执行某个sql文件
 mysql -h 127.0.0.1 -u root -p ai_chat < /udpate_sql/a.sql
+
+终端执行sql优化显示
+select * from sys_user where id=1\G;
 ```
 
 ### 用户和授权

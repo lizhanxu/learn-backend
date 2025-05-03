@@ -223,6 +223,7 @@ docker login git.xxx.com:9999
 docker pull library/hello-world:14.04
 libary是image文件所在的组，hello-world:14.04是image文件名，
 libary是Docker官方仓库的默认组，可省去
+--platform arm64 指定架构，跨平台pull需要明确指定
 ```
 
 ##### 查看本机镜像文件
@@ -256,16 +257,27 @@ run参数：
 -p 宿主机端口：容器暴露端口   表示端口映射
 -v 宿主机目录：容器目录      将宿主机目录映射到容器目录
 --name  指定容器名称    如果没有指定，将生成随机名称
---network   指定容器网络
+--network=host   指定容器网络为host，默认为bridge，等同--net=host
 --restart=always   开机自启
 --entrypoint "tail /dev/null"
+--user root  指定当前用户为root
+--shm-size=50g  指定共享内存大小，默认64mb
 ```
 
 ##### 使用Dockerfile创建镜像
 
-```
-docker build   可对cpu、内存等进行限制
-docker build -t (镜像名) (Dockerfile所在目录,其中`.`代表点前目录)
+```sh
+# 构建镜像
+docker build -t (镜像名) .(Dockerfile所在目录,其中`.`代表点前目录)
+
+# 输出日志文件
+docker build -t image_name:tag . > build.log 2>&1
+
+# 禁用缓存
+--no-cache
+
+# 无论构建成功与否，一律删除中间容器
+--force-rm
 ```
 
 ##### 保存镜像
@@ -376,10 +388,17 @@ docker inspect --format='{{.Created}}' <image_name_or_id>
 docker inspect -f "{{.Config.Entrypoint}}" <image_name_or_id>
 ```
 
+获取镜像架构
+
+```yaml
+docker image inspect <image_name_or_id> | grep Architecture
+```
+
 ##### 获取镜像的构建历史
 
 ```
 docker history <image_name_or_id>
+docker history --no-trunc --format "{{.CreatedBy}}" <image_name_or_id> >> build.log
 ```
 
 #### 容器相关命令
@@ -506,6 +525,24 @@ run python hello.py
 run ["python","hello.py"]            两种写法
 ```
 
+#### ARG
+
+定义变量
+
+```
+ARG VERSION=3.1
+
+Dockerfile中使用 ${VERSION}
+```
+
+#### USER
+
+指定当前用户，例如
+
+```
+USER root
+```
+
 #### CMD
 
 容器启动时执行的命令,每个Dockerfile只能有一条CMD有效，多条CMD只执行最后一条
@@ -543,6 +580,23 @@ add <src> <dest>
 env <key> <value>
 env <key>=<value> <key>=<value>
 ```
+### entrypoint和cmd的区别与联系
+
+| 特性       | `ENTRYPOINT`                                            | `CMD`                          |
+| ---------- | ------------------------------------------------------- | ------------------------------ |
+| 用途       | 定义**容器启动时必须执行的主命令**                      | 提供**默认参数**，可以被覆盖   |
+| 可被覆盖性 | 不会被 `docker run` 的命令覆盖（除非用 `--entrypoint`） | 会被 `docker run` 后的命令覆盖 |
+| 一起使用时 | `CMD` 的值会作为 `ENTRYPOINT` 的参数                    |                                |
+
+不同场景的使用
+
+| 场景                                            | 建议用法                |
+| ----------------------------------------------- | ----------------------- |
+| 镜像封装成工具，如 CLI 工具（`curl`, `python`） | 用 `ENTRYPOINT`         |
+| 镜像运行某个主程序，但允许用户传参              | 用 `ENTRYPOINT` + `CMD` |
+| 想让用户方便地替换整个命令                      | 用 `CMD`                |
+
+
 ## Docker镜像管理
 
 DockerHub——Docker官方远程仓库
@@ -738,23 +792,83 @@ docker-compose up -d <service_name>
 
 ![image-20240612134423599](./Docker.assets/image-20240612134423599.png)
 
+## 磁盘空间优化
+
+### 压缩docker_data.vhdx
+
+#### 原理
+
+因为WSL2本质上来说是虚拟机，对于每个虚拟机，Windows会创建`vhdx`后缀的磁盘镜像文件，用于存储其内容，类似于vmdk、vdi，用过虚拟机的同学应该都不陌生。
+
+这种镜像文件的特点是支持自动扩容，但是一般不会自动缩容。因此一旦Docker镜像文件过多，引起镜像扩容，即使再使用`docker system prune`清理虚拟机中的镜像文件，也不会释放出已经占用的系统磁盘空间了。
+
+#### 解决方案
+
+镜像文件虽然一般不会自动压缩，但是支持手动压缩。
+
+首先寻找到对应的镜像文件，Docker对应的镜像文件一般是在`%USERPROFILE%\AppData\Local\Docker\wsl\disk\docker_data.vhdx`
+
+```
+docker system prune
+停止docker
+wsl --shutdown
+
+# 代码来自 https://github.com/microsoft/WSL/issues/4699#issuecomment-627133168
+
+diskpart
+# open window Diskpart
+select vdisk file="%USERPROFILE%\AppData\Local\Docker\wsl\disk\docker_data.vhdx"
+attach vdisk readonly
+compact vdisk
+detach vdisk
+exit
+```
+
+diskpart命令也可简化为如下命令（注：管理员权限的PowerShell中）
+
+```
+Optimize-VHD -Path "%USERPROFILE%\AppData\Local\Docker\wsl\disk\docker_data.vhdx" -Mode Full
+```
+
 ## 常见问题
 
 ### 容器内无法访问外部网络
 
-```
-查看转发
-firewall-cmd --query-masquerade
+#### 方式一：开启宿主机的ipv4转发功能
 
-查看配置
+```
+# 查看宿主机防火墙转发
+firewall-cmd --query-masquerade
+yes/no
+
+# 开启转发
+firewall-cmd --add-masquerade --permanent
+
+# 重载防火墙配置
+firewall-cmd --reload
+
+# 查看配置
 sysctl -p
 
-配置转发
-vi /etc/sysctl.conf
-net.ipv4.ip_forward = 1
+# 配置转发
+echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf
 
-开启转发
-firewall-cmd --add-masquerade --permanent
+# 重启network
+systemctl restart network
+
+# 重启docker
+systemctl restart docker
+```
+
+#### 方式二：重建网络`docker0`
+
+```
+sudo service docker stop
+sudo pkill docker
+sudo iptables -t nat -F
+sudo ifconfig docker0 down
+sudo brctl delbr docker0
+sudo service docker start
 ```
 
 ### 无权限
@@ -841,3 +955,36 @@ su - root
 OOM问题
 
 找到占用最多内存的进程杀掉
+
+### 容器内无法正常解析域名
+
+方式一
+
+创建容器时指定
+
+docker run --dns=127.0.0.53
+
+docker-compose.yml
+
+```
+    ports:
+      - '80:80'
+    networks:
+      - mynetwork
+    dns:
+      - 127.0.0.53
+```
+
+方式二
+
+在`/etc/docker/daemon.json`文件中增加并重启docker service
+
+```
+{
+  "dns" : [
+    "114.114.114.114",
+    "8.8.8.8"
+  ]
+}
+```
+

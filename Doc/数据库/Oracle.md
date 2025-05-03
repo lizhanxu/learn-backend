@@ -127,3 +127,14 @@ SELECT * FROM v$version;
 查找所有drop table
 
 (DROP\s+TABLE\s+[^;]*);
+
+
+
+查询当前用户密码过期时间
+
+```
+SELECT expiry_date FROM user_users;
+
+ALTER USER your_username IDENTIFIED BY new_password;
+```
+
