@@ -121,3 +121,27 @@ modinfo nvidia | grep version
 lspci | grep -i nvidia
 ```
 
+
+
+## 常见问题
+
+### nvidia驱动自动更新
+
+查看更新记录
+
+```
+cat /var/log/dpkg.log | grep nvidia
+```
+
+锁定驱动版本
+
+```
+sudo apt-mark hold nvidia-driver-535
+```
+
+重启服务器
+
+```
+reboot
+```
+

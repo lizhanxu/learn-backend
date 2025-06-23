@@ -193,6 +193,8 @@ curl url -x http://proxy-server:port
 注：对于复杂url需要添加""
 // 指定账号密码
 curl -u username:password -X GET "http://localhost:9200/"
+// 携带文件
+curl url -F "file=@/data/test.png"
 ```
 
 ## 执行多条shell命令
@@ -608,6 +610,9 @@ iptables -L
 iptables -L INPUT
 注意顺序由上往下，优先级从高到低
 
+查看指定chain并显示行号
+iptables -L INPUT --line-numbers
+
 插入规则到指定行
 iptables -I INPUT 1 -s 192.19.0.0/24 -p tcp --dport 3306 -j ACCEPT
 -I表示插入，-A表示追加（到末尾），-D表示删除
@@ -620,6 +625,18 @@ ACCEPT表示接收数据包，DROP表示丢弃数据包
 
 删除指定chain的某行规则
 iptables -D INPUT 4
+
+重置iptables依次执行如下：
+
+清空指定chain的所有规则
+iptables -F INPUT
+
+删除指定的空chain
+iptables -X INPUT
+
+将指定链上的计数器重置为零
+iptables -Z INPUT
+
 ```
 
 ## 查看软件路径
@@ -748,6 +765,12 @@ Swap:             0           0           0
 - **total**: 0 MB 表示系统中没有配置交换空间。
 - **used**: 0 MB 表示没有使用任何交换空间。
 - **free**: 0 MB 表示没有空闲的交换空间
+
+### 查看内存占用最多的前10个进程
+
+```
+ps aux --sort=-%mem | head -n 10
+```
 
 ## 查看ssl证书信息
 
