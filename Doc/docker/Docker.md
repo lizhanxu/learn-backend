@@ -1,5 +1,7 @@
 # Docker
 
+[TOC]
+
 ## 基本概念
 
 [推荐阅读——阮一峰博客](http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html)
@@ -252,8 +254,8 @@ docker run具有自动抓取 image 文件的功能。如果发现本地没有指
 
 run参数：
 -d 表示在后台运行容器
--t 伪终端
--i 交互模式
+-t 伪终端 等价于tty: true
+-i 交互模式 等价于stdin_open: true
 -p 宿主机端口：容器暴露端口   表示端口映射
 -v 宿主机目录：容器目录      将宿主机目录映射到容器目录
 --name  指定容器名称    如果没有指定，将生成随机名称

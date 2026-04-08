@@ -7,6 +7,12 @@
 ipconfig /all
 ```
 
+### 刷新DNS缓存
+
+```
+ipconfig /flushdns
+```
+
 ## 查看占用端口对应的PID
 
 ```

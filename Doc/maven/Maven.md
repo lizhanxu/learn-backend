@@ -594,3 +594,36 @@ mvn deploy:deploy-file -DgroupId=com.dm -DartifactId=DmJdbcDriver18 -Dversion=1.
 mvn deploy:deploy-file -DgroupId=com.kingbase8 -DartifactId=kingbase8-jdbc -Dversion=2.0 -Dpackaging=jar -Dfile=./kingbase8-jdbc-2.0.jar -DgeneratePom=true -Durl=https://git.wsb360.com/api/v4/projects/32/packages/maven -DrepositoryId=gitlab-fschat -s settings.xml
 ```
 
+
+
+```
+mvn deploy:deploy-file -Dmaven.resolver.transport=wagon -Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.allowall=true -DgroupId=com.cdbc -DartifactId=fs-codegen -Dversion=5.8.0 -Dpackaging=jar -Dfile=./fs-codegen.jar -DgeneratePom=true -Durl=https://git.wsb360.com/api/v4/projects/32/packages/maven -DrepositoryId=gitlab-fschat -s settings.xml
+```
+
+
+
+```
+mvn deploy:deploy-file \
+    -Dmaven.resolver.transport=wagon \
+    -Dmaven.wagon.http.ssl.insecure=true \
+    -Dmaven.wagon.http.ssl.allowall=true \
+    -DgroupId=com.cdbc \
+    -DartifactId=fs-common-bom \
+    -Dversion=5.8.0 \
+    -Dpackaging=pom \
+    -Dfile=./fs-common-bom.xml \
+    -DgeneratePom=false \
+    -Durl=https://git.wsb360.com/api/v4/projects/32/packages/maven \
+    -DrepositoryId=gitlab-fschat \
+    -s settings.xml
+```
+
+
+
+```
+mvn deploy \
+    -Dmaven.resolver.transport=wagon \
+    -Dmaven.wagon.http.ssl.insecure=true \
+    -Dmaven.wagon.http.ssl.allowall=true
+```
+
