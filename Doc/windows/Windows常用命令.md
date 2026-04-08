@@ -49,3 +49,25 @@ nslookup -qt=CNAME _243a61334894a1b25605243a55483464.suban.cqxx.com 223.5.5.5
 ## 查看文件MD5、SHA值
 
 `certutil -hashfile D:\xxx.txt md5`
+
+## wsl迁移
+
+```
+wsl --manage Ubuntu --move D:\WSL\Ubuntu
+```
+
+## CMD设置代理
+
+```
+当前窗口生效
+set http_proxy=http://127.0.0.1:7890
+set https_proxy=http://127.0.0.1:7890
+
+长期生效
+setx http_proxy http://127.0.0.1:7890
+setx https_proxy http://127.0.0.1:7890
+
+查看代理设置
+set | findstr proxy
+```
+
