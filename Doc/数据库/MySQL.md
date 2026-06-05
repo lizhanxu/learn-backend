@@ -278,6 +278,18 @@ WHERE table_schema = 'fschat'  -- 替换为你的数据库名称
   );
 ```
 
+导出用户
+
+```
+mysql -h 127.0.0.1 -u root -p -N $@ -e "SELECT CONCAT('SHOW GRANTS FOR ''', user, '''@''', host, ''';') AS query FROM mysql.user" > users.sql
+```
+
+导出授权
+
+```
+mysql -h 'host' -u 'user' -p -N $@ -e "source /tmp/users.sql" > /tmp/grants.sql
+```
+
 
 
 ```
