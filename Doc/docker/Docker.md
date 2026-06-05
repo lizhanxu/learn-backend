@@ -796,6 +796,19 @@ docker-compose up -d <service_name>
 
 ## 磁盘空间优化
 
+### 常用命令
+
+```
+# 查看所有磁盘占用，包括镜像、容器、卷、构建缓存
+docker system df
+
+# 清空所有构建缓存
+docker builder prune -af
+
+# 清空所有，包括所有镜像、容器、卷、构建缓存
+docker system prune -af
+```
+
 ### 压缩docker_data.vhdx
 
 #### 原理
