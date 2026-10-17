@@ -104,3 +104,9 @@ ci: 持续集成
 git branch --set-upstream-to=origin/develop develop
 ```
 
+#### 长期记住账号密码
+
+```
+git config --global credential.helper store
+```
+
